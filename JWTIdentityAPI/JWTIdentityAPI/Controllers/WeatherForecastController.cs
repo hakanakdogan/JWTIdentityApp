@@ -24,7 +24,7 @@ namespace JWTIdentityAPI.Controllers
             _logger = logger;
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin,Privileged User")]
         [HttpGet]
         
         public IEnumerable<WeatherForecast> Get()

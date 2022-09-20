@@ -33,11 +33,11 @@ namespace JWTIdentityAPI.Controllers
         {
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
             if(user == null) return Unauthorized();
-
+            
             var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
             if (result.Succeeded) 
             {
-                return new UserDto { Email = user.Email, UserName = user.UserName, CreatedOn = DateTime.UtcNow, Token = _tokenService.CreateToken(user) };
+                return new UserDto { Email = user.Email, UserName = user.UserName, CreatedOn = DateTime.UtcNow, Token = _tokenService.CreateToken(user).Result };
             }
 
             return Unauthorized();
@@ -75,7 +75,7 @@ namespace JWTIdentityAPI.Controllers
                     CreatedOn = user.CreatedOn,
                     UserName = user.UserName,
                     Email = user.Email,
-                    Token = _tokenService.CreateToken(user)
+                    Token = _tokenService.CreateToken(user).Result
 
                 };
             }
@@ -85,15 +85,16 @@ namespace JWTIdentityAPI.Controllers
 
         [Authorize]
         [HttpGet("currentuser")]
-        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        public async Task<ActionResult<UserDtoWithId>> GetCurrentUser()
         {
             var user = await _userManager.FindByEmailAsync(User.FindFirstValue(ClaimTypes.Email));
 
-            return new UserDto
+            return new UserDtoWithId
             {
+                Id = user.Id,
                 Email = user.Email,
                 UserName = user.UserName,
-                Token = _tokenService.CreateToken(user),
+                Token = _tokenService.CreateToken(user).Result,
                 CreatedOn = DateTime.UtcNow
             };
         }

@@ -1,4 +1,5 @@
 ﻿using JWTIdentityAPI.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -6,19 +7,24 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace JWTIdentityAPI.Services
 {
     public class TokenService
     {
         private readonly IConfiguration _config;
+        private readonly RoleManager<AppRole> _roleManager;
+        private readonly UserManager<AppUser> _userManager;
 
-        public TokenService(IConfiguration config)
+        public TokenService(IConfiguration config, RoleManager<AppRole> roleManager, UserManager<AppUser> userManager)
         {
             _config = config;
+            _roleManager = roleManager;
+            _userManager = userManager;
         }
 
-        public string CreateToken(AppUser user)
+        public async Task<string> CreateToken(AppUser user)
         {
             
             
@@ -29,6 +35,9 @@ namespace JWTIdentityAPI.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email)
             };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            AddRolesToClaims(claims, roles);
 
             // var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("super secret key"));
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["IdentityAPI:SecretKey"]));
@@ -47,6 +56,15 @@ namespace JWTIdentityAPI.Services
             return tokenHandler.WriteToken(token);
 
 
+        }
+
+        private void AddRolesToClaims(List<Claim> claims, IList<string> roles)
+        {
+            foreach (var role in roles)
+            {
+                var roleClaim = new Claim(ClaimTypes.Role, role);
+                claims.Add(roleClaim);
+            }
         }
     }
 }
